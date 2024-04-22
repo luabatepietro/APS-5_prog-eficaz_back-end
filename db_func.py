@@ -27,8 +27,8 @@ def user_add(nome, cpf, data):
     return 'Erro: Usuario já existe!'
   else:
     return 'Erro: Todos os campos são obrigatorios!'
-#read one user
 
+#read one user
 def user_find(id):
   '''
   retorna: {'_id': ObjectId('xxx'), 'id': 1, 'nome': 'exemplo', 'CPF': '123', 'data': '00/00/0000'}
@@ -118,22 +118,36 @@ def bike_all():
 def emp_add(user_id, bike_id, inicio, devolucao='em aberto'):
   if user_id and bike_id and inicio:
     bike = bike_find(bike_id)
-    if bike['status'] == 'disponivel':
+    user = user_find(user_id)
+    if bike['status'] == 'disponivel' and not isinstance(user, str):
       dic = {
         'id': emprestimos_id,
         'usuario_id': user_id,
         'bicicleta_id': bike_id,
         'inicio': inicio,
-        'devolução': devolucao
+        'devolucao': devolucao,
+        'status': 'ativo'
+      }
+
+      dic_user = {
+        'id': emprestimos_id,
+        'bicicleta_id': bike_id,
+        'inicio': inicio,
+        'devolucao': devolucao
       }
       db.counters.update_one({}, {'$inc':{'emprestimos_id':1}})
       db.emprestimos.insert_one(dic)
+      db.bicicletas.update_one({'id': bike_id}, {'$set': {'status': 'Em uso'}})
+      if 'emprestimos' in user.keys():
+        db.usuarios.update_one({'id': user_id}, {'$push': {'emprestimos': dic_user}})
+      else:
+        db.usuarios.update_one({'id': user_id}, {'$addToSet': {'emprestimos': dic_user}})
       return 'Emprestimo cadastrado com sucesso!'
     else:
       return f'Bicicleta <{bike_id}> já está em uso!'
   else:
     return 'Erro: Todos os campos são obrigatorios!'
-
+  
 #read one emp
 def emp_find(id):
   '''
@@ -146,11 +160,18 @@ def emp_find(id):
   return emp
 
 #read one emp
-def emp_user_find(id):
-  emps = list(db.emprestimos.find({'usuario_id': id}))
-  if emps == None:
+def emp_user_find(id, status='ativos'):
+  '''
+  retorna os emprestimos do usuario (por default retorna so os emprestimos ativos) \n
+  para obter TODOS os emprestimos que o usuario ja teve => emp_user_find(id, 'all') <=
+  '''
+  if list(db.emprestimos.find({'usuario_id': id})) == None:
     return f'Nenhum emprestimo encontrado para o usuario <{id}>'
-  return emps
+  if status == 'ativos':
+    emp_ativos = db.emprestimos.find({'$and': [{'usuario_id': id}, {'status': 'ativo'}]})
+    return emp_ativos
+  all_emps = db.emprestimos.find({'usuario_id': id})
+  return all_emps
 
 #read one emp  
 def emp_bike_find(id):
@@ -173,5 +194,7 @@ def emp_delete(id):
   emp = emp_find(id)
   if not isinstance(emp, str):
     db.emprestimos.delete_one({'id':id})
+    db.bicicletas.update_one({'id': emp['bicicleta_id']}, {'$set': {'status': 'disponivel'}})
+    db.usuarios.update_one({'id': emp['usuario_id']}, {'$pull': {'emprestimos': {'id': id}}})
     return f'Emprestimo <{id}> deletado com sucesso'
   return 'Erro: Emprestimo não encontrado / não existe'
