@@ -19,7 +19,8 @@ def user_add(nome, cpf, data):
         'id': usuario_id,
         'nome': nome,
         'CPF': cpf,
-        'data': data
+        'data': data,
+        'emprestimos':[]
       }
       db.counters.update_one({}, {'$inc':{'usuarios_id':1}})
       db.usuarios.insert_one(dic)
@@ -69,7 +70,8 @@ def bike_add(marca, modelo, cidade):
       'marca': marca,
       'modelo': modelo,
       'cidade': cidade,
-      'status': 'disponivel'
+      'status': 'disponivel',
+      'emprestimo': []
     }
     db.counters.update_one({}, {'$inc':{'bicicletas_id':1}})
     db.bicicletas.insert_one(dic)
@@ -144,15 +146,9 @@ def emp_add(user_id, bike_id, inicio, devolucao='em aberto'):
       db.emprestimos.insert_one(dic)
       db.bicicletas.update_one({'id': bike_id}, {'$set': {'status': 'Em uso'}})
 
-      if 'emprestimos' in user.keys():
-        db.usuarios.update_one({'id': user_id}, {'$push': {'emprestimos': dic_user}})
-      else:
-        db.usuarios.update_one({'id': user_id}, {'$addToSet': {'emprestimos': dic_user}})
+      db.usuarios.update_one({'id': user_id}, {'$push': {'emprestimos': dic_user}})
 
-      if 'emprestimo' in bike.keys():
-        db.bicicletas.update_one({'id': bike_id}, {'$push': {'emprestimo': dic_bike}})
-      else:
-        db.usuarios.update_one({'id': bike_id}, {'$addToSet': {'emprestimo': dic_bike}})
+      db.bicicletas.update_one({'id': bike_id}, {'$push': {'emprestimo': dic_bike}})
 
       return {'resp': 'Emprestimo cadastrado com sucesso!', 'status_code': 201}
     else:
