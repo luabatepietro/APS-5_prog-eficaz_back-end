@@ -118,7 +118,7 @@ def emp_add(user_id, bike_id, inicio, devolucao='em aberto'):
   if user_id and bike_id and inicio:
     bike = bike_find(bike_id)
     user = user_find(user_id)
-    if bike['status'] == 'disponivel' and not isinstance(user, str):
+    if bike['resp']['status'] == 'disponivel' and not isinstance(user['resp'], str):
       dic = {
         'id': emprestimos_id,
         'usuario_id': user_id,
@@ -215,10 +215,10 @@ def emp_update(id, dic):
 #delete emp
 def emp_delete(id):
   emp = emp_find(id)
-  if not isinstance(emp, str):
+  if not isinstance(emp['resp'], str):
     db.emprestimos.update_one({'id':id}, {'$set': {'status': 'inativo'}})
-    db.bicicletas.update_one({'id': emp['bicicleta_id']}, {'$set': {'status': 'disponivel'}})
-    db.usuarios.update_one({'id': emp['usuario_id']}, {'$pull': {'emprestimos': {'id': id}}})
-    db.bicicletas.update_one({'id': emp['bicicleta_id']}, {'$pull': {'emprestimo': {'id': id}}})
+    db.bicicletas.update_one({'id': emp['resp']['bicicleta_id']}, {'$set': {'status': 'disponivel'}})
+    db.usuarios.update_one({'id': emp['resp']['usuario_id']}, {'$pull': {'emprestimos': {'id': id}}})
+    db.bicicletas.update_one({'id': emp['resp']['bicicleta_id']}, {'$pull': {'emprestimo': {'id': id}}})
     return {'resp': f'Emprestimo <{id}> deletado com sucesso', 'status_code': 200}
   return {'resp': f'Erro: Emprestimo <{id}> não existe', 'status_code': 404}
