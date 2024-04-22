@@ -216,7 +216,7 @@ def emp_delete(id_emprestimo):
         mongo.db.bicicletas.update_one({'id': emp['bicicleta_id']}, {'$set': {'status': 'disponivel'}})
         mongo.db.usuarios.update_one({'id': emp['usuario_id']}, {'$pull': {'emprestimos': {'id': id_emprestimo}}})
         return f'Emprestimo <{id_emprestimo}> deletado com sucesso'
-    return 'Erro: Emprestimo não encontrado / não existe'
+    return 'Erro: Emprestimo não encontdrado'
 
 
 
