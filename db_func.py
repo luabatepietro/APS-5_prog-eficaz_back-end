@@ -193,7 +193,7 @@ def emp_update(id, dic):
 def emp_delete(id):
   emp = emp_find(id)
   if not isinstance(emp, str):
-    db.emprestimos.delete_one({'id':id})
+    db.emprestimos.update_one({'id':id}, {'$set': {'status': 'inativo'}})
     db.bicicletas.update_one({'id': emp['bicicleta_id']}, {'$set': {'status': 'disponivel'}})
     db.usuarios.update_one({'id': emp['usuario_id']}, {'$pull': {'emprestimos': {'id': id}}})
     return f'Emprestimo <{id}> deletado com sucesso'
